@@ -36,6 +36,7 @@ class ApiTestBase(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.httpd.shutdown()
+        cls.httpd.server_close()
         cls._patcher.stop()
         cls.tmp.cleanup()
 

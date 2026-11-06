@@ -89,7 +89,11 @@ python -m app.cli restore <zip路径> [--dest-parent <目录>]
 ```
 
 服务运行时（`python -m app.cli serve`），也可走 HTTP API（`127.0.0.1:8765`）：
-`GET/POST /api/projects`、`PATCH /api/projects/<id>`、`POST /api/projects/<id>/archive|restore`。
+
+- 项目：`GET/POST /api/projects`、`GET/PATCH /api/projects/<id>`、`POST /api/projects/<id>/archive|restore`
+- 档案：`GET /api/projects/<id>/markdown`、`POST /api/projects/<id>/markdown`（保存 PROJECT.md，原子写）
+- 运维：`GET /api/health`（探活，无需配置）、`GET /api/bootstrap`（配置状态与状态枚举）、`GET /api/status`（数据根、项目数、最近备份、备份列表、校验错误明细）、`POST /api/backup`、`POST /api/restore`
+
 PATCH 请求包含未知字段会返回 400 错误（不是静默忽略），这是故意的。
 
 ### 方式 B：直接改文件（服务未运行时）

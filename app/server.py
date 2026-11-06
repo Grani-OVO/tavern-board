@@ -135,6 +135,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._serve_static(path.lstrip("/"))
 
         # API
+        if path == "/api/health":
+            # 轻量存活检查：不依赖数据目录配置，供自动化探活
+            return self._ok({"alive": True, "now": now_iso()})
+
         if path == "/api/bootstrap":
             root = config.get_data_root()
             return self._ok({
