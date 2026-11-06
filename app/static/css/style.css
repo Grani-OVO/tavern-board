@@ -261,7 +261,8 @@ span.stamp {
   /* 印泥吸进纸里：正片叠底 + 轻透明 + SVG 滤镜歪扭/飞白 */
   mix-blend-mode: multiply;
   filter: url(#hanko-ink);
-  opacity: .9;
+  -webkit-text-stroke: 0.3px currentColor;
+  opacity: .95;
   padding: 0;
 }
 span.stamp.st-开发中 { color: var(--st-开发中); transform: rotate(5deg); }

@@ -62,12 +62,12 @@ function toast(message, isError = false) {
   svg.style.position = "absolute";
   svg.innerHTML =
     '<filter id="hanko-ink" x="-15%" y="-15%" width="130%" height="130%">' +
-    // 大尺度低频噪声：圆边与文字边缘的轻微歪扭
-    '<feTurbulence type="fractalNoise" baseFrequency="0.032" numOctaves="3" seed="7" result="warp"/>' +
-    '<feDisplacementMap in="SourceGraphic" in2="warp" scale="2.6" xChannelSelector="R" yChannelSelector="G" result="displaced"/>' +
-    // 高频噪声映射为透明度，threshold 抠出细小飞白（印泥不匀）
-    '<feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="2" seed="11" result="grain"/>' +
-    '<feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.85 0.85 0.85 0 -0.62" result="grainHoles"/>' +
+    // 低频噪声：仅让圆边与笔画轻微歪扭（幅度小，保住可读性）
+    '<feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="7" result="warp"/>' +
+    '<feDisplacementMap in="SourceGraphic" in2="warp" scale="1.3" xChannelSelector="R" yChannelSelector="G" result="displaced"/>' +
+    // 稀疏蛀点：高频噪声只抠出少量小飞白（不再啃穿笔画主体）
+    '<feTurbulence type="fractalNoise" baseFrequency="0.35" numOctaves="2" seed="11" result="grain"/>' +
+    '<feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.55 0.55 0.55 0 -0.88" result="grainHoles"/>' +
     '<feComposite in="displaced" in2="grainHoles" operator="out"/>' +
     "</filter>";
   document.addEventListener("DOMContentLoaded", () => document.body.appendChild(svg));
