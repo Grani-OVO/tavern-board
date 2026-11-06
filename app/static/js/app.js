@@ -52,6 +52,27 @@ function toast(message, isError = false) {
   toastTimer = setTimeout(() => el.classList.remove("show"), 3200);
 }
 
+/* ---------- 公共 SVG 滤镜（判子印章的印泥质感）---------- */
+/* feTurbulence 大波纹扭曲圆边（手盖的歪斜感）+ 高频噪声抠出飞白（印泥不匀）。
+   三页共用，body 存在时注入一次。 */
+(function injectHankoFilter() {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("width", "0");
+  svg.setAttribute("height", "0");
+  svg.style.position = "absolute";
+  svg.innerHTML =
+    '<filter id="hanko-ink" x="-15%" y="-15%" width="130%" height="130%">' +
+    // 大尺度低频噪声：圆边与文字边缘的轻微歪扭
+    '<feTurbulence type="fractalNoise" baseFrequency="0.032" numOctaves="3" seed="7" result="warp"/>' +
+    '<feDisplacementMap in="SourceGraphic" in2="warp" scale="2.6" xChannelSelector="R" yChannelSelector="G" result="displaced"/>' +
+    // 高频噪声映射为透明度，threshold 抠出细小飞白（印泥不匀）
+    '<feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="2" seed="11" result="grain"/>' +
+    '<feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.85 0.85 0.85 0 -0.62" result="grainHoles"/>' +
+    '<feComposite in="displaced" in2="grainHoles" operator="out"/>' +
+    "</filter>";
+  document.addEventListener("DOMContentLoaded", () => document.body.appendChild(svg));
+})();
+
 /* ---------- 轻量 Markdown 渲染（标题/段落/列表/表格/引用/粗体/代码） ---------- */
 function inlineMd(text) {
   return esc(text)

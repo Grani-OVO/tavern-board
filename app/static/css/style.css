@@ -37,14 +37,14 @@
   --indigo: #3d5a6c;      /* 靛蓝 */
   --line: #c4ae85;
 
-  /* 状态印泥色 */
-  --st-需求确认: #3d5a6c;
-  --st-开发中: #a63a28;
-  --st-待验收: #b36a24;
-  --st-已验收: #4a7c3f;
-  --st-已上线: #8f6f1d;
-  --st-暂停: #6e6a5e;
-  --st-归档: #4a463e;
+  /* 状态印泥色（哑光印肉质感，非纯红绿二分）*/
+  --st-需求确认: #3a5a78;  /* 靛青 */
+  --st-开发中: #b03a26;    /* 朱肉 */
+  --st-待验收: #c06a20;    /* 赤橙 */
+  --st-已验收: #3e7a50;    /* 青碧 */
+  --st-已上线: #96741e;    /* 金茶 */
+  --st-暂停: #6e685c;      /* 鼠灰 */
+  --st-归档: #565048;      /* 淡墨 */
 }
 
 /* 内联 SVG 噪纹直接写在各背景里（和纸/卡片/弹层），零图片文件 */
@@ -244,29 +244,32 @@ body {
 }
 
 /* ---------- 状态印记 ---------- */
-/* 详情页的展示印章（span）：圆形判子 */
+/* 详情页的展示印章（span）：大号圆形判子，SVG 滤镜做印泥质感 */
 span.stamp {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 54px; height: 54px;
+  width: 88px; height: 88px;
   border-radius: 50%;
-  border: 2.5px solid currentColor;
-  outline: 1.5px solid currentColor;
-  outline-offset: -7px;
-  transform: rotate(-7deg);
-  font-size: 11.5px; font-weight: 700; letter-spacing: 1px;
-  line-height: 1.25; text-align: center;
+  border: 3.5px solid currentColor;
+  outline: 2px solid currentColor;
+  outline-offset: -10px;
+  transform: rotate(-8deg);
+  font-size: 16px; font-weight: 700; letter-spacing: 2px;
+  white-space: nowrap;
+  line-height: 1; text-align: center;
   color: var(--st-需求确认);
-  background: rgba(255,252,240,.5);
-  box-shadow: inset 0 0 8px rgba(160,60,40,.12);
-  opacity: .95;
-  padding: 4px;
+  background: transparent;
+  /* 印泥吸进纸里：正片叠底 + 轻透明 + SVG 滤镜歪扭/飞白 */
+  mix-blend-mode: multiply;
+  filter: url(#hanko-ink);
+  opacity: .9;
+  padding: 0;
 }
-span.stamp.st-开发中 { color: var(--st-开发中); }
-span.stamp.st-待验收 { color: var(--st-待验收); }
-span.stamp.st-已验收 { color: var(--st-已验收); }
-span.stamp.st-已上线 { color: var(--st-已上线); }
-span.stamp.st-暂停 { color: var(--st-暂停); }
-span.stamp.st-归档 { color: var(--st-归档); }
+span.stamp.st-开发中 { color: var(--st-开发中); transform: rotate(5deg); }
+span.stamp.st-待验收 { color: var(--st-待验收); transform: rotate(-11deg); }
+span.stamp.st-已验收 { color: var(--st-已验收); transform: rotate(7deg); }
+span.stamp.st-已上线 { color: var(--st-已上线); transform: rotate(-5deg); }
+span.stamp.st-暂停 { color: var(--st-暂停); transform: rotate(9deg); }
+span.stamp.st-归档 { color: var(--st-归档); transform: rotate(-6deg); }
 
 /* 看板卡片上的印章（select）：保持胶囊，可用性优先 */
 select.stamp {
@@ -346,6 +349,7 @@ select.stamp option { color: var(--ink); background: #fffaf0; letter-spacing: 0;
 /* ---------- 详情页 ---------- */
 .detail-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; }
 @media (max-width: 980px) { .detail-grid { grid-template-columns: 1fr; } }
+#p-stamp { margin: 2px 0 10px; }
 .section { margin-bottom: 22px; }
 .kv { display: grid; grid-template-columns: 112px 1fr; gap: 5px 10px; font-size: 14px; }
 .kv dt { color: var(--ink-soft); font-weight: 700; letter-spacing: 1px; }
