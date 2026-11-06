@@ -58,6 +58,13 @@ function splitCsv(v) {
   return String(v || "").split(/[,，]/).map((s) => s.trim()).filter(Boolean);
 }
 
+function stampSelect(p) {
+  const options = STATUSES.map((s) =>
+    `<option value="${esc(s)}" ${s === p.status ? "selected" : ""}>${esc(s)}</option>`).join("");
+  return `<select class="stamp st-${esc(p.status)}" data-pid="${esc(p.id)}" data-old="${esc(p.status)}"
+    title="点开直接切换阶段">${options}</select>`;
+}
+
 function cardHtml(p) {
   const blocked = p.blocked
     ? `<div class="blocked"><strong>阻塞：</strong>${esc(p.blocked)}</div>` : "";
@@ -65,7 +72,7 @@ function cardHtml(p) {
   return `
   <article class="card">
     <h3><a href="/detail.html?id=${encodeURIComponent(p.id)}">${esc(p.name)}</a></h3>
-    ${stamp(p.status)}
+    ${stampSelect(p)}
     <p class="goal">${esc(p.goal || "（未填写目标）")}</p>
     <div class="progressbar"><div style="width:${Number(p.progress) || 0}%"></div></div>
     <div class="meta">进度 ${Number(p.progress) || 0}% · 最后更新 ${fmtDate(p.updated_at)}</div>
@@ -73,6 +80,31 @@ function cardHtml(p) {
     ${blocked}
     <div style="margin-top:8px">${tags}</div>
   </article>`;
+}
+
+async function quickStatusChange(sel) {
+  const pid = sel.dataset.pid;
+  const oldStatus = sel.dataset.old;
+  const newStatus = sel.value;
+  if (newStatus === oldStatus) return;
+  sel.disabled = true;
+  try {
+    if (newStatus === "归档") {
+      await postJSON(`/api/projects/${encodeURIComponent(pid)}/archive`);
+      toast("已归档（勾选「查看归档」可找回）");
+    } else if (oldStatus === "归档") {
+      await postJSON(`/api/projects/${encodeURIComponent(pid)}/restore`, { status: newStatus });
+      toast(`已从归档恢复为「${newStatus}」`);
+    } else {
+      await patchJSON(`/api/projects/${encodeURIComponent(pid)}`, { status: newStatus });
+      toast(`阶段已切换为「${newStatus}」`);
+    }
+    refresh();
+  } catch (err) {
+    toast(err.message, true);
+    sel.value = oldStatus;
+    sel.disabled = false;
+  }
 }
 
 async function refresh() {
@@ -123,6 +155,10 @@ async function init() {
   document.getElementById("n-submit").onclick = submitNew;
   document.getElementById("dlg-new").addEventListener("click", (e) => {
     if (e.target.id === "dlg-new") e.target.classList.remove("open");
+  });
+
+  document.getElementById("cards").addEventListener("change", (e) => {
+    if (e.target.matches("select.stamp")) quickStatusChange(e.target);
   });
 
   let debounce = null;
