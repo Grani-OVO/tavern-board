@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>备份与设置 · 个人项目管理系统</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">后勤账房<span class="sub">BACKUP &amp; SETTINGS</span></div>
+  <nav><a href="/">← 返回公告板</a></nav>
+</header>
+
+<main class="board">
+
+  <!-- 首次启动向导 -->
+  <div class="panel" id="wizard" style="display:none">
+    <h1>初次光临，请先登记落脚处</h1>
+    <p class="hint" style="margin-bottom:18px">选择一个空目录或新目录存放项目数据（建议使用绝对路径），也可以从备份包恢复。</p>
+
+    <h2>方式一：新建数据目录</h2>
+    <div class="field"><label>数据根目录（绝对路径）</label><input id="w-root" placeholder="例：D:\WorkBuddy\数据\项目管理系统"></div>
+    <button class="btn primary" id="w-init">初始化并启用</button>
+
+    <h2 style="margin-top:28px">方式二：从备份包恢复</h2>
+    <div class="field"><label>备份 ZIP 文件路径（绝对路径）</label><input id="w-zip" placeholder="例：C:\Users\你\Downloads\pms-backup-20261106-130000.zip"></div>
+    <div class="field"><label>恢复到哪个目录（可选，默认放备份包旁边）</label><input id="w-dest" placeholder="留空则自动创建 pms-restored-<时间戳> 目录"></div>
+    <button class="btn primary" id="w-restore">恢复并启用</button>
+
+    <div id="w-msg" style="margin-top:16px"></div>
+  </div>
+
+  <!-- 备份状态页 -->
+  <div class="panel" id="status" style="display:none">
+    <h1>备份与数据状况</h1>
+    <dl class="kv" id="s-meta" style="margin-bottom:18px"></dl>
+
+    <h2>本地备份</h2>
+    <p id="s-backup"></p>
+    <button class="btn primary" id="s-do-backup">立即备份</button>
+
+    <div class="warn-box" id="s-validation" style="margin:16px 0;display:none"></div>
+
+    <h2 style="margin-top:28px">从备份恢复</h2>
+    <p class="hint">恢复不会覆盖当前数据：系统会先对当前数据做一次安全快照，再把备份解压到旁边的新目录，校验通过后由你决定是否切换。</p>
+    <div class="field"><label>备份 ZIP 文件路径（绝对路径）</label><input id="r-zip" placeholder="从百度网盘下载的备份包路径"></div>
+    <button class="btn primary" id="r-go">恢复到新目录</button>
+    <div id="r-result" style="margin-top:14px"></div>
+
+    <h2 style="margin-top:28px">上传到百度网盘（手动）</h2>
+    <p class="hint">
+      本系统只负责生成本地备份，不自动连接网盘。上传步骤：<br>
+      ① 点击「立即备份」生成 ZIP；<br>
+      ② 打开百度网盘，把上面显示的备份 ZIP 文件手动上传到你的网盘目录；<br>
+      ③ 在另一台设备（Windows / macOS）下载该 ZIP，在本页用「从备份恢复」导入并切换。<br>
+      <strong>注意：</strong>「本地备份成功」不等于「已上传网盘」，请以网盘页面实际记录为准。
+    </p>
+  </div>
+
+</main>
+
+<script src="/js/app.js"></script>
+<script>
+"use strict";
+
+async function runWizard(action) {
+  const msg = document.getElementById("w-msg");
+  try {
+    let data;
+    if (action === "init") {
+      const root = document.getElementById("w-root").value.trim();
+      if (!root) { toast("请填写数据根目录路径", true); return; }
+      data = await postJSON("/api/setup", { data_root: root });
+      msg.innerHTML = `<div class="ok-box">数据目录已启用：${esc(data.data_root)}，正在进入公告板…</div>`;
+    } else {
+      const zip = document.getElementById("w-zip").value.trim();
+      if (!zip) { toast("请填写备份包路径", true); return; }
+      data = await postJSON("/api/setup", { zip_path: zip, dest_parent: document.getElementById("w-dest").value.trim() || undefined });
+      msg.innerHTML = `<div class="ok-box">恢复完成并已启用：${esc(data.data_root)}，正在进入公告板…</div>`;
+    }
+    setTimeout(() => { location.href = "/"; }, 1400);
+  } catch (err) {
+    msg.innerHTML = `<div class="warn-box">${esc(err.message)}</div>`;
+  }
+}
+
+async function renderStatus() {
+  const st = await getJSON("/api/status");
+  document.getElementById("s-meta").innerHTML = `
+    <dt>数据根目录</dt><dd><code class="path">${esc(st.data_root)}</code></dd>
+    <dt>进行中项目</dt><dd>${st.project_count} 个</dd>
+    <dt>归档项目</dt><dd>${st.archived_count} 个</dd>
+    <dt>校验状态</dt><dd>${st.validation_ok ? "✅ 全库校验通过" : "❌ 存在校验错误"}</dd>`;
+
+  const last = st.last_backup || {};
+  document.getElementById("s-backup").innerHTML = last.time
+    ? `最近本地备份：<strong>${esc(fmtDate(last.time))}</strong><br>备份文件：<code class="path">${esc(last.path)}</code>`
+    : "尚无本地备份记录。";
+
+  if (!st.validation_ok) {
+    const box = document.getElementById("s-validation");
+    box.style.display = "block";
+    box.innerHTML = "<strong>数据校验发现问题：</strong><br>" +
+      (st.validation_errors || []).map(esc).join("<br>") +
+      "<br>运行 <code>python -m app.cli validate</code> 可查看完整报告。";
+  }
+}
+
+async function doBackup() {
+  const btn = document.getElementById("s-do-backup");
+  btn.disabled = true;
+  try {
+    const data = await postJSON("/api/backup");
+    toast("本地备份完成（这只是本地快照，尚未上传网盘）");
+    renderStatus();
+  } catch (err) { toast(err.message, true); }
+  btn.disabled = false;
+}
+
+async function doRestore() {
+  const zip = document.getElementById("r-zip").value.trim();
+  const box = document.getElementById("r-result");
+  if (!zip) { toast("请填写备份包路径", true); return; }
+  box.innerHTML = '<p class="hint">正在恢复……（已先对当前数据做安全快照）</p>';
+  try {
+    const data = await postJSON("/api/restore", { zip_path: zip });
+    if (data.errors && data.errors.length) {
+      box.innerHTML = `<div class="warn-box"><strong>恢复失败：</strong><br>${data.errors.map(esc).join("<br>")}</div>`;
+      return;
+    }
+    box.innerHTML = `
+      <div class="ok-box">恢复成功：数据已解压并通过校验。<br>
+      新目录：<code class="path">${esc(data.dest)}</code><br>
+      安全快照：<code class="path">${esc(data.safety_backup)}</code></div>
+      <button class="btn primary" id="r-activate" style="margin-top:10px">切换到此目录</button>`;
+    document.getElementById("r-activate").onclick = async () => {
+      try {
+        await postJSON("/api/activate-root", { data_root: data.dest });
+        toast("已切换数据根目录");
+        renderStatus();
+      } catch (err) { toast(err.message, true); }
+    };
+  } catch (err) {
+    box.innerHTML = `<div class="warn-box">${esc(err.message)}</div>`;
+  }
+}
+
+async function init() {
+  const boot = await getJSON("/api/bootstrap");
+  const wizardMode = !boot.configured || new URLSearchParams(location.search).get("wizard") === "1";
+  if (wizardMode) {
+    document.getElementById("wizard").style.display = "block";
+    document.getElementById("w-init").onclick = () => runWizard("init");
+    document.getElementById("w-restore").onclick = () => runWizard("restore");
+    return;
+  }
+  document.getElementById("status").style.display = "block";
+  document.getElementById("s-do-backup").onclick = doBackup;
+  document.getElementById("r-go").onclick = doRestore;
+  renderStatus().catch((err) => toast(err.message, true));
+}
+
+init().catch((err) => toast(err.message, true));
+</script>
+</body>
+</html>

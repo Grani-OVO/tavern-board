@@ -1,0 +1,202 @@
+/* 日式奇幻酒馆公告栏主题 —— 纸张与木质，可读性优先 */
+
+:root {
+  --wood-dark: #4a3320;
+  --wood-mid: #6b4a2b;
+  --wood-light: #8a6540;
+  --paper: #f8f1dd;
+  --paper-dim: #efe4c8;
+  --ink: #33241a;
+  --ink-soft: #6b5540;
+  --accent: #a8382a;
+  --line: #c9b58c;
+
+  --st-需求确认: #5a6b7d;
+  --st-开发中: #b3402e;
+  --st-待验收: #c07b28;
+  --st-已验收: #4a7c3f;
+  --st-已上线: #8f6f1d;
+  --st-暂停: #7a7a72;
+  --st-归档: #55534e;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Noto Serif SC", "Songti SC", SimSun, "Microsoft YaHei", serif;
+  color: var(--ink);
+  background-color: var(--wood-mid);
+  background-image:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.08) 0 2px, transparent 2px 84px),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.04) 0 1px, transparent 1px 26px),
+    linear-gradient(180deg, #6f4e2d, #5c3f24);
+  min-height: 100vh;
+}
+
+/* ---------- 顶栏（招牌横木） ---------- */
+.topbar {
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px 28px;
+  background: linear-gradient(180deg, #3d2a17, #2e1f10);
+  border-bottom: 4px solid #1f1408;
+  box-shadow: 0 3px 10px rgba(0,0,0,.45);
+  flex-wrap: wrap;
+}
+.topbar .brand {
+  font-size: 22px; font-weight: 700; letter-spacing: 2px; color: #f3e3bb;
+  text-shadow: 0 1px 0 #000;
+}
+.topbar .brand .sub { font-size: 12px; letter-spacing: 4px; color: #c7a76a; margin-left: 10px; }
+.topbar nav { margin-left: auto; display: flex; gap: 10px; flex-wrap: wrap; }
+.topbar a { color: #e8d5a4; text-decoration: none; padding: 6px 14px; border: 1px solid #7a5a32; border-radius: 4px; }
+.topbar a:hover { background: #523718; }
+
+/* ---------- 公告板容器 ---------- */
+.board {
+  max-width: 1180px; margin: 26px auto 60px; padding: 0 20px;
+}
+.panel {
+  background: var(--paper);
+  border: 2px solid var(--wood-dark);
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.35), inset 0 0 60px rgba(160,120,60,.12);
+  padding: 22px 26px;
+}
+.panel h1, .panel h2 { margin: 0 0 14px; }
+.panel h1 { font-size: 24px; }
+.panel h2 { font-size: 19px; border-bottom: 2px dashed var(--line); padding-bottom: 8px; }
+
+/* ---------- 工具行 ---------- */
+.toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+.toolbar input, .toolbar select {
+  font: inherit; padding: 7px 10px; border: 1px solid var(--wood-dark);
+  background: #fffaf0; color: var(--ink); border-radius: 4px;
+}
+.toolbar input[type="search"] { min-width: 200px; }
+
+/* ---------- 按钮 ---------- */
+.btn {
+  font: inherit; cursor: pointer;
+  padding: 8px 18px; border-radius: 4px;
+  border: 2px solid #2e1f10;
+  background: linear-gradient(180deg, #9a6f3e, #7a5230);
+  color: #fdf4dc; font-weight: 700; letter-spacing: 1px;
+  box-shadow: 0 2px 0 #241808;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn:active { transform: translateY(1px); box-shadow: none; }
+.btn.primary { background: linear-gradient(180deg, #c04a35, #9a2f1e); }
+.btn.plain { background: #fffaf0; color: var(--ink); border-color: var(--wood-dark); box-shadow: 0 2px 0 #cbb287; }
+.btn.small { padding: 4px 12px; font-size: 13px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ---------- 委托单卡片 ---------- */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 20px; }
+.card {
+  position: relative;
+  background: linear-gradient(178deg, #fdf7e6, #f5ecd4);
+  border: 1px solid #b39b6d;
+  border-radius: 3px;
+  padding: 18px 18px 14px;
+  box-shadow: 2px 4px 10px rgba(0,0,0,.28);
+}
+.card::before { /* 图钉 */
+  content: ""; position: absolute; top: -8px; left: 50%; margin-left: -7px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #d8b56a, #8a6540 60%, #5c3f24);
+  box-shadow: 0 2px 3px rgba(0,0,0,.4);
+}
+.card h3 { margin: 2px 0 6px; font-size: 18px; }
+.card h3 a { color: var(--ink); text-decoration: none; }
+.card h3 a:hover { color: var(--accent); text-decoration: underline; }
+.card .meta { color: var(--ink-soft); font-size: 12.5px; margin: 3px 0; }
+.card .goal { font-size: 13.5px; margin: 8px 0; color: #4d3a28; }
+.card .next { margin-top: 10px; padding: 7px 10px; background: #fff8e2; border-left: 4px solid var(--wood-light); font-size: 13.5px; }
+.card .blocked { margin-top: 6px; padding: 6px 10px; background: #f9e3da; border-left: 4px solid var(--accent); font-size: 13px; }
+
+/* ---------- 状态印章 ---------- */
+.stamp {
+  display: inline-block; transform: rotate(-4deg);
+  border: 2px solid currentColor; border-radius: 5px;
+  padding: 2px 9px; font-size: 12.5px; font-weight: 700; letter-spacing: 2px;
+  color: var(--st-需求确认);
+  opacity: .92; background: rgba(255,255,255,.35);
+}
+.stamp.st-开发中 { color: var(--st-开发中); }
+.stamp.st-待验收 { color: var(--st-待验收); }
+.stamp.st-已验收 { color: var(--st-已验收); }
+.stamp.st-已上线 { color: var(--st-已上线); }
+.stamp.st-暂停 { color: var(--st-暂停); }
+.stamp.st-归档 { color: var(--st-归档); }
+
+.tag {
+  display: inline-block; font-size: 12px; color: var(--ink-soft);
+  border: 1px dashed var(--line); border-radius: 10px; padding: 1px 9px; margin: 2px 4px 0 0;
+  background: #fffaf0;
+}
+
+.progressbar { height: 8px; border: 1px solid var(--wood-dark); border-radius: 4px; background: #fffaf0; overflow: hidden; margin: 8px 0 2px; }
+.progressbar > div { height: 100%; background: linear-gradient(90deg, #c9a04a, #a8382a); }
+
+/* ---------- 表单与弹层 ---------- */
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 700; }
+.field input, .field select, .field textarea {
+  width: 100%; font: inherit; padding: 7px 10px;
+  border: 1px solid var(--wood-dark); border-radius: 4px; background: #fffaf0; color: var(--ink);
+}
+.field textarea { min-height: 74px; resize: vertical; }
+
+.overlay {
+  position: fixed; inset: 0; background: rgba(30,18,6,.55);
+  display: none; align-items: flex-start; justify-content: center;
+  padding: 6vh 16px; z-index: 40; overflow: auto;
+}
+.overlay.open { display: flex; }
+.dialog {
+  background: var(--paper); border: 2px solid var(--wood-dark); border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.5);
+  width: min(620px, 100%); padding: 24px 26px;
+}
+.dialog h2 { margin-top: 0; }
+
+/* ---------- 详情页 ---------- */
+.detail-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 22px; }
+@media (max-width: 980px) { .detail-grid { grid-template-columns: 1fr; } }
+.section { margin-bottom: 20px; }
+.kv { display: grid; grid-template-columns: 110px 1fr; gap: 4px 10px; font-size: 14px; }
+.kv dt { color: var(--ink-soft); font-weight: 700; }
+.kv dd { margin: 0; }
+
+.todo-list { list-style: none; padding: 0; margin: 0; }
+.todo-list li { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; border-bottom: 1px dotted var(--line); }
+.todo-list li.done span { text-decoration: line-through; color: #9a8a70; }
+
+/* ---------- Markdown 渲染 ---------- */
+.markdown { line-height: 1.75; font-size: 14.5px; }
+.markdown h1 { font-size: 20px; border-bottom: 2px solid var(--line); padding-bottom: 6px; }
+.markdown h2 { font-size: 17px; }
+.markdown h3 { font-size: 15px; }
+.markdown blockquote { border-left: 4px solid var(--wood-light); background: #f3ead0; margin: 8px 0; padding: 6px 14px; color: #55432e; }
+.markdown code { background: #f0e6c8; border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; font-size: 13px; }
+.markdown table { border-collapse: collapse; margin: 10px 0; width: 100%; }
+.markdown th, .markdown td { border: 1px solid var(--line); padding: 5px 10px; font-size: 13.5px; text-align: left; }
+.markdown th { background: #f0e4c4; }
+
+/* ---------- 提示与状态 ---------- */
+.toast {
+  position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%);
+  background: #33241a; color: #f6ecd2; padding: 10px 22px; border-radius: 5px;
+  border: 1px solid #c7a76a; box-shadow: 0 4px 14px rgba(0,0,0,.4);
+  opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 60; max-width: 86vw;
+}
+.toast.show { opacity: 1; }
+.toast.error { border-color: var(--accent); }
+
+.empty { text-align: center; color: var(--ink-soft); padding: 40px 0; font-size: 15px; }
+.hint { font-size: 12.5px; color: var(--ink-soft); }
+.warn-box { background: #f9e3da; border: 1px solid var(--accent); border-radius: 4px; padding: 10px 14px; font-size: 13.5px; }
+.ok-box { background: #e7f0dd; border: 1px solid var(--st-已验收); border-radius: 4px; padding: 10px 14px; font-size: 13.5px; }
+a { color: #7a3020; }
+code.path { background:#f0e6c8; border:1px solid var(--line); border-radius:3px; padding:1px 6px; font-size:12.5px; }

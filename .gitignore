@@ -1,0 +1,14 @@
+# 运行时本地配置（含数据根目录绝对路径，不入库不进备份）
+app-config.json
+
+# 环境变量与密钥
+.env
+.env.*
+
+# 备份产物与临时文件
+*.zip.tmp
+*.json.tmp
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db

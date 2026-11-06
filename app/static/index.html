@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>委托公告板 · 个人项目管理系统</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">委托公告板<span class="sub">PERSONAL QUEST BOARD</span></div>
+  <nav>
+    <a href="/admin.html">备份与设置</a>
+  </nav>
+</header>
+
+<main class="board">
+  <div class="panel">
+    <div class="toolbar">
+      <button class="btn primary" id="btn-new">✚ 新建项目</button>
+      <input type="search" id="f-q" placeholder="按名称 / 目标搜索…">
+      <select id="f-status"><option value="">全部阶段</option></select>
+      <input type="text" id="f-tag" placeholder="标签" style="min-width:110px">
+      <label class="hint" style="display:flex;align-items:center;gap:6px">
+        <input type="checkbox" id="f-archived"> 查看归档
+      </label>
+    </div>
+
+    <div class="cards" id="cards"></div>
+    <div class="empty" id="empty" style="display:none">板上还没有委托单。</div>
+  </div>
+</main>
+
+<!-- 新建项目弹层 -->
+<div class="overlay" id="dlg-new">
+  <div class="dialog">
+    <h2>新委托登记</h2>
+    <div class="field"><label>项目名称 *</label><input id="n-name" placeholder="例：爬虫工具箱"></div>
+    <div class="field"><label>一句话目标</label><input id="n-goal" placeholder="这个项目要做成什么"></div>
+    <div class="field"><label>阶段</label><select id="n-status"></select></div>
+    <div class="field"><label>技术栈（逗号分隔）</label><input id="n-tech" placeholder="Python, 原生 JS"></div>
+    <div class="field"><label>标签（逗号分隔）</label><input id="n-tags" placeholder="工具, 本地应用"></div>
+    <div class="field"><label>下一步</label><input id="n-next" placeholder="例：写实现计划"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+      <button class="btn plain" id="n-cancel">取消</button>
+      <button class="btn primary" id="n-submit">登记委托</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+"use strict";
+
+let STATUSES = [];
+
+function splitCsv(v) {
+  return String(v || "").split(/[,，]/).map((s) => s.trim()).filter(Boolean);
+}
+
+function cardHtml(p) {
+  const blocked = p.blocked
+    ? `<div class="blocked"><strong>阻塞：</strong>${esc(p.blocked)}</div>` : "";
+  const tags = (p.tags || []).map((t) => `<span class="tag">${esc(t)}</span>`).join("");
+  return `
+  <article class="card">
+    <h3><a href="/detail.html?id=${encodeURIComponent(p.id)}">${esc(p.name)}</a></h3>
+    ${stamp(p.status)}
+    <p class="goal">${esc(p.goal || "（未填写目标）")}</p>
+    <div class="progressbar"><div style="width:${Number(p.progress) || 0}%"></div></div>
+    <div class="meta">进度 ${Number(p.progress) || 0}% · 最后更新 ${fmtDate(p.updated_at)}</div>
+    <div class="next"><strong>下一步：</strong>${esc(p.next_step || "（待定）")}</div>
+    ${blocked}
+    <div style="margin-top:8px">${tags}</div>
+  </article>`;
+}
+
+async function refresh() {
+  const params = new URLSearchParams();
+  if (document.getElementById("f-q").value.trim()) params.set("q", document.getElementById("f-q").value.trim());
+  if (document.getElementById("f-status").value) params.set("status", document.getElementById("f-status").value);
+  if (document.getElementById("f-tag").value.trim()) params.set("tag", document.getElementById("f-tag").value.trim());
+  if (document.getElementById("f-archived").checked) params.set("include_archived", "1");
+
+  const items = await getJSON("/api/projects?" + params.toString());
+  document.getElementById("cards").innerHTML = items.map(cardHtml).join("");
+  document.getElementById("empty").style.display = items.length ? "none" : "block";
+}
+
+async function submitNew() {
+  const name = document.getElementById("n-name").value.trim();
+  if (!name) { toast("必须填写项目名称", true); return; }
+  try {
+    const data = await postJSON("/api/projects", {
+      name,
+      goal: document.getElementById("n-goal").value.trim(),
+      status: document.getElementById("n-status").value,
+      tech_stack: splitCsv(document.getElementById("n-tech").value),
+      tags: splitCsv(document.getElementById("n-tags").value),
+      next_step: document.getElementById("n-next").value.trim(),
+    });
+    toast(`委托已登记：${data.name}（${data.id}）`);
+    document.getElementById("dlg-new").classList.remove("open");
+    document.getElementById("n-name").value = "";
+    refresh();
+  } catch (err) { toast(err.message, true); }
+}
+
+async function init() {
+  const boot = await ensureConfigured();
+  if (!boot) return;
+  STATUSES = boot.statuses;
+
+  const selStatus = document.getElementById("f-status");
+  const selNew = document.getElementById("n-status");
+  for (const s of STATUSES) {
+    selStatus.insertAdjacentHTML("beforeend", `<option value="${esc(s)}">${esc(s)}</option>`);
+    selNew.insertAdjacentHTML("beforeend", `<option value="${esc(s)}">${esc(s)}</option>`);
+  }
+
+  document.getElementById("btn-new").onclick = () => document.getElementById("dlg-new").classList.add("open");
+  document.getElementById("n-cancel").onclick = () => document.getElementById("dlg-new").classList.remove("open");
+  document.getElementById("n-submit").onclick = submitNew;
+  document.getElementById("dlg-new").addEventListener("click", (e) => {
+    if (e.target.id === "dlg-new") e.target.classList.remove("open");
+  });
+
+  let debounce = null;
+  for (const id of ["f-q", "f-status", "f-tag", "f-archived"]) {
+    document.getElementById(id).addEventListener("input", () => {
+      clearTimeout(debounce);
+      debounce = setTimeout(refresh, 250);
+    });
+  }
+  refresh();
+}
+
+init().catch((err) => {
+  document.getElementById("empty").style.display = "block";
+  document.getElementById("empty").textContent = "加载失败：" + err.message;
+});
+</script>
+</body>
+</html>

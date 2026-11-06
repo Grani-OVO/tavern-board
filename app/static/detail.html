@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>委托详情 · 个人项目管理系统</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">委托详情<span class="sub">QUEST DETAIL</span></div>
+  <nav>
+    <a href="/">← 返回公告板</a>
+    <a href="/admin.html">备份与设置</a>
+  </nav>
+</header>
+
+<main class="board" id="main" style="display:none">
+  <div class="panel">
+    <h1 id="p-name" style="margin-bottom:6px"></h1>
+    <div id="p-stamp"></div>
+
+    <div class="detail-grid" style="margin-top:18px">
+      <div>
+        <div class="section">
+          <h2>快速更新</h2>
+          <div class="field"><label>阶段</label><select id="u-status"></select></div>
+          <div class="field"><label>进度（0-100）</label><input type="number" id="u-progress" min="0" max="100"></div>
+          <div class="field"><label>下一步</label><input id="u-next"></div>
+          <div class="field"><label>阻塞（留空表示无）</label><input id="u-blocked"></div>
+          <div class="field"><label>标签（逗号分隔）</label><input id="u-tags"></div>
+          <div style="display:flex;gap:10px">
+            <button class="btn primary" id="u-save">保存更新</button>
+            <button class="btn plain" id="u-archive">归档此项目</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>待办事项</h2>
+          <div class="field" style="display:flex;gap:8px">
+            <input id="t-text" placeholder="新的待办事项…" onkeydown="if(event.key==='Enter')addTodo()">
+            <button class="btn small" id="t-add">添加</button>
+          </div>
+          <ul class="todo-list" id="t-list"></ul>
+        </div>
+
+        <div class="section">
+          <h2>关联工单</h2>
+          <div id="tickets"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section">
+          <h2>项目档案（PROJECT.md）</h2>
+          <div class="markdown" id="md"></div>
+        </div>
+        <div class="section">
+          <h2>档案信息</h2>
+          <dl class="kv" id="meta"></dl>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<main class="board" id="loading">
+  <div class="panel"><div class="empty">正在读取委托书…</div></div>
+</main>
+
+<!-- 工单查看弹层 -->
+<div class="overlay" id="dlg-ticket">
+  <div class="dialog">
+    <h2 id="tk-title"></h2>
+    <div class="markdown" id="tk-md"></div>
+    <div style="text-align:right;margin-top:16px">
+      <button class="btn plain" onclick="document.getElementById('dlg-ticket').classList.remove('open')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+"use strict";
+
+const pid = new URLSearchParams(location.search).get("id");
+let project = null;
+
+function splitCsv(v) {
+  return String(v || "").split(/[,，]/).map((s) => s.trim()).filter(Boolean);
+}
+
+async function loadProject() {
+  project = await getJSON("/api/projects/" + encodeURIComponent(pid));
+  document.getElementById("loading").style.display = "none";
+  document.getElementById("main").style.display = "block";
+
+  document.getElementById("p-name").textContent = project.name;
+  document.getElementById("p-stamp").innerHTML = stamp(project.status);
+
+  const sel = document.getElementById("u-status");
+  sel.innerHTML = "";
+  for (const s of STATUS_ORDER) {
+    sel.insertAdjacentHTML("beforeend",
+      `<option value="${esc(s)}" ${s === project.status ? "selected" : ""}>${esc(s)}</option>`);
+  }
+  document.getElementById("u-progress").value = project.progress ?? 0;
+  document.getElementById("u-next").value = project.next_step || "";
+  document.getElementById("u-blocked").value = project.blocked || "";
+  document.getElementById("u-tags").value = (project.tags || []).join(", ");
+
+  document.getElementById("meta").innerHTML = `
+    <dt>项目 ID</dt><dd><code class="path">${esc(project.id)}</code></dd>
+    <dt>目标</dt><dd>${esc(project.goal || "—")}</dd>
+    <dt>技术栈</dt><dd>${(project.tech_stack || []).map(esc).join("、") || "—"}</dd>
+    <dt>建档时间</dt><dd>${fmtDate(project.created_at)}</dd>
+    <dt>最后更新</dt><dd>${fmtDate(project.updated_at)}</dd>
+    <dt>归档时间</dt><dd>${fmtDate(project.archived_at)}</dd>`;
+
+  renderTodos();
+  renderTickets();
+
+  const md = await getJSON("/api/projects/" + encodeURIComponent(pid) + "/markdown");
+  document.getElementById("md").innerHTML = renderMarkdown(md.markdown) || '<p class="hint">（无 PROJECT.md）</p>';
+
+  const isArchived = project.status === "归档";
+  const btnArchive = document.getElementById("u-archive");
+  btnArchive.textContent = isArchived ? "恢复此项目" : "归档此项目";
+}
+
+function renderTodos() {
+  const ul = document.getElementById("t-list");
+  ul.innerHTML = (project.todos || []).map((t, i) => `
+    <li class="${t.done ? "done" : ""}">
+      <input type="checkbox" ${t.done ? "checked" : ""} data-i="${i}">
+      <span>${esc(t.text)}</span>
+      <button class="btn small plain" data-del="${i}" style="margin-left:auto">删除</button>
+    </li>`).join("");
+  ul.querySelectorAll("input[type=checkbox]").forEach((cb) => {
+    cb.onchange = () => { project.todos[Number(cb.dataset.i)].done = cb.checked; saveTodos(); };
+  });
+  ul.querySelectorAll("button[data-del]").forEach((b) => {
+    b.onclick = () => { project.todos.splice(Number(b.dataset.del), 1); saveTodos(); };
+  });
+}
+
+async function saveTodos() {
+  try {
+    project = await patchJSON("/api/projects/" + encodeURIComponent(pid), { todos: project.todos });
+    renderTodos();
+  } catch (err) { toast(err.message, true); }
+}
+
+async function addTodo() {
+  const input = document.getElementById("t-text");
+  const text = input.value.trim();
+  if (!text) return;
+  const todos = [...(project.todos || []), { id: "t-" + String((project.todos || []).length + 1).padStart(3, "0"), text, done: false }];
+  try {
+    project = await patchJSON("/api/projects/" + encodeURIComponent(pid), { todos });
+    input.value = "";
+    renderTodos();
+  } catch (err) { toast(err.message, true); }
+}
+
+async function openTicket(relPath) {
+  try {
+    const data = await getJSON("/api/file?path=" + encodeURIComponent(relPath));
+    document.getElementById("tk-title").textContent = relPath.split("/").pop();
+    document.getElementById("tk-md").innerHTML = renderMarkdown(data.content);
+    document.getElementById("dlg-ticket").classList.add("open");
+  } catch (err) { toast(err.message, true); }
+}
+
+function renderTickets() {
+  const box = document.getElementById("tickets");
+  const tickets = project.tickets || [];
+  if (!tickets.length) {
+    box.innerHTML = '<p class="hint">（暂无关联工单）</p>';
+    return;
+  }
+  box.innerHTML = tickets.map((t) =>
+    `<div style="margin:4px 0">📄 <a href="javascript:void(0)" data-ticket="${esc(t)}">${esc(t)}</a></div>`).join("");
+  box.querySelectorAll("a[data-ticket]").forEach((a) => {
+    a.onclick = () => openTicket(a.dataset.ticket);
+  });
+}
+
+async function saveUpdate() {
+  const patch = {
+    status: document.getElementById("u-status").value,
+    progress: Number(document.getElementById("u-progress").value || 0),
+    next_step: document.getElementById("u-next").value.trim(),
+    blocked: document.getElementById("u-blocked").value.trim() || null,
+    tags: splitCsv(document.getElementById("u-tags").value),
+  };
+  try {
+    project = await patchJSON("/api/projects/" + encodeURIComponent(pid), patch);
+    toast("更新已保存");
+    loadProject();
+  } catch (err) { toast(err.message, true); }
+}
+
+async function toggleArchive() {
+  const isArchived = project.status === "归档";
+  const url = "/api/projects/" + encodeURIComponent(pid) + (isArchived ? "/restore" : "/archive");
+  try {
+    project = await postJSON(url, isArchived ? { status: "开发中" } : {});
+    toast(isArchived ? "项目已恢复为开发中" : "项目已归档（可在公告板勾选「查看归档」找到）");
+    loadProject();
+  } catch (err) { toast(err.message, true); }
+}
+
+async function init() {
+  const boot = await ensureConfigured();
+  if (!boot) return;
+  if (!pid) { document.getElementById("loading").innerHTML = '<div class="panel"><div class="empty">缺少项目 ID 参数。</div></div>'; return; }
+  document.getElementById("u-save").onclick = saveUpdate;
+  document.getElementById("u-archive").onclick = toggleArchive;
+  document.getElementById("t-add").onclick = addTodo;
+  await loadProject();
+}
+
+init().catch((err) => {
+  document.getElementById("loading").innerHTML = `<div class="panel"><div class="empty">加载失败：${esc(err.message)}</div></div>`;
+});
+</script>
+</body>
+</html>
