@@ -3,7 +3,17 @@
    色板定稿：传统日本色（墨/朱/金茶/靛）+ 木色系
    对比度实测（WCAG）：正文墨字 vs 和纸 13.3:1，全部达标
    纹理全部由内联 SVG 滤镜生成，零图片、零外部资源
+   字体：霞鹜文楷 v1.530（OFL 开源，本地打包，离线可用）
    ============================================================ */
+
+/* 本地字体：霞鹜文楷（屏显楷体，标题正文通用；加载失败回退系统楷体/雅黑） */
+@font-face {
+  font-family: "LXGW WenKai";
+  src: url("/fonts/LXGWWenKai-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   /* 木材 */
@@ -43,7 +53,7 @@
 
 body {
   margin: 0;
-  font-family: "Noto Serif SC", "Songti SC", SimSun, "Microsoft YaHei", serif;
+  font-family: "LXGW WenKai", "KaiTi", "楷体", "Noto Serif SC", "Microsoft YaHei", serif;
   color: var(--ink);
   min-height: 100vh;
   background-color: var(--wood-mid);

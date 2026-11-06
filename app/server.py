@@ -85,6 +85,12 @@ class Handler(BaseHTTPRequestHandler):
             mime = "text/javascript; charset=utf-8"
         elif target.suffix == ".html":
             mime = "text/html; charset=utf-8"
+        elif target.suffix in (".ttf",):
+            mime = "font/ttf"
+        elif target.suffix in (".woff",):
+            mime = "font/woff"
+        elif target.suffix in (".woff2",):
+            mime = "font/woff2"
         body = target.read_bytes()
         self.send_response(200)
         self.send_header("Content-Type", mime)
@@ -125,7 +131,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._serve_static("index.html")
         if path in ("/detail.html", "/admin.html"):
             return self._serve_static(path.lstrip("/"))
-        if path.startswith("/css/") or path.startswith("/js/"):
+        if path.startswith("/css/") or path.startswith("/js/") or path.startswith("/fonts/"):
             return self._serve_static(path.lstrip("/"))
 
         # API
