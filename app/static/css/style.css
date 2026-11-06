@@ -15,6 +15,16 @@
   font-display: swap;
 }
 
+/* 拉丁字符专用花体（Great Vibes，OFL 开源）。
+   排在字体栈最前：英文/数字命中花体，中文回落霞鹜文楷。 */
+@font-face {
+  font-family: "Great Vibes";
+  src: url("/fonts/GreatVibes-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* 木材 */
   --wood-deepest: #241808;
@@ -53,7 +63,7 @@
 
 body {
   margin: 0;
-  font-family: "LXGW WenKai", "KaiTi", "楷体", "Noto Serif SC", "Microsoft YaHei", serif;
+  font-family: "Great Vibes", "LXGW WenKai", "KaiTi", "楷体", "Noto Serif SC", "Microsoft YaHei", serif;
   color: var(--ink);
   min-height: 100vh;
   background-color: var(--wood-mid);
