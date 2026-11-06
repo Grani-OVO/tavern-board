@@ -99,6 +99,8 @@ class Handler(BaseHTTPRequestHandler):
             self._route_get()
         except ApiError as exc:
             self._fail(exc.status, exc.message)
+        except ValueError as exc:
+            self._fail(400, str(exc))
         except Exception as exc:  # noqa: BLE001
             self._fail(500, f"服务器内部错误: {exc}")
 
@@ -165,13 +167,17 @@ class Handler(BaseHTTPRequestHandler):
             archived = projects.list_projects(data_root, include_archived=True, status="归档")
             report = projects.validate_all(data_root)
             last = manifest.get("last_backup") or {}
+            project_errors = []
+            for pid, errors in report["projects"].items():
+                project_errors.extend(errors)
             return self._ok({
                 "data_root": str(data_root),
                 "project_count": len(active),
                 "archived_count": len(archived),
                 "last_backup": last,
+                "backups": projects.list_backups(data_root),
                 "validation_ok": report["ok"],
-                "validation_errors": report["manifest"] + report["other"],
+                "validation_errors": report["manifest"] + report["other"] + project_errors,
                 "now": now_iso(),
             })
 
@@ -273,6 +279,16 @@ class Handler(BaseHTTPRequestHandler):
 
             if action == "archive":
                 return self._ok(projects.archive_project(data_root, pid))
+            if action == "markdown":  # 保存 PROJECT.md（原子写）
+                content = body.get("content")
+                if not isinstance(content, str):
+                    raise ApiError(400, "需要 content 字符串")
+                md_path = projects.project_dir(data_root, pid) / "PROJECT.md"
+                if not md_path.parent.exists():
+                    raise ApiError(404, f"项目目录不存在: {pid}")
+                from .core.storage import atomic_write_text
+                atomic_write_text(md_path, content)
+                return self._ok({"saved": True})
             if action == "restore":
                 try:
                     return self._ok(projects.restore_project(

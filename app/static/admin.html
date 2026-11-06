@@ -39,6 +39,7 @@
     <h2>本地备份</h2>
     <p id="s-backup"></p>
     <button class="btn primary" id="s-do-backup">立即备份</button>
+    <div id="s-history" style="margin-top:12px"></div>
 
     <div class="warn-box" id="s-validation" style="margin:16px 0;display:none"></div>
 
@@ -64,6 +65,10 @@
 <script>
 "use strict";
 
+function isRiskyRoot(path) {
+  return /\\temp\\|\\tmp\\|\/tmp\/|\/temp\/|\\desktop\\|\/desktop\/|桌面/i.test(path);
+}
+
 async function runWizard(action) {
   const msg = document.getElementById("w-msg");
   try {
@@ -71,6 +76,10 @@ async function runWizard(action) {
     if (action === "init") {
       const root = document.getElementById("w-root").value.trim();
       if (!root) { toast("请填写数据根目录路径", true); return; }
+      if (isRiskyRoot(root)) {
+        msg.innerHTML = '<div class="warn-box">这个路径在临时目录或桌面上，数据容易被系统清理。请换一个正式位置，例如 <code>D:\\WorkBuddy\\数据\\项目管理系统</code>。</div>';
+        return;
+      }
       data = await postJSON("/api/setup", { data_root: root });
       msg.innerHTML = `<div class="ok-box">数据目录已启用：${esc(data.data_root)}，正在进入公告板…</div>`;
     } else {
@@ -97,6 +106,18 @@ async function renderStatus() {
   document.getElementById("s-backup").innerHTML = last.time
     ? `最近本地备份：<strong>${esc(fmtDate(last.time))}</strong><br>备份文件：<code class="path">${esc(last.path)}</code>`
     : "尚无本地备份记录。";
+
+  const history = st.backups || [];
+  document.getElementById("s-history").innerHTML = history.length
+    ? `<table style="border-collapse:collapse;font-size:13px;width:100%">
+        <tr style="text-align:left"><th style="padding:4px 8px">备份文件</th><th style="padding:4px 8px">时间</th><th style="padding:4px 8px">大小</th></tr>
+        ${history.map((b) => `<tr>
+          <td style="padding:4px 8px"><code class="path">${esc(b.name)}</code></td>
+          <td style="padding:4px 8px">${esc(fmtDate(b.modified_at))}</td>
+          <td style="padding:4px 8px">${b.size_kb} KB</td></tr>`).join("")}
+      </table>
+      <p class="hint">历史备份不自动删除，位于数据目录的 backups/ 文件夹内。</p>`
+    : "";
 
   if (!st.validation_ok) {
     const box = document.getElementById("s-validation");

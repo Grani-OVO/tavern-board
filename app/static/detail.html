@@ -52,8 +52,16 @@
 
       <div>
         <div class="section">
-          <h2>项目档案（PROJECT.md）</h2>
+          <h2>项目档案（PROJECT.md）<button class="btn small plain" id="md-edit" style="float:right">编辑</button></h2>
           <div class="markdown" id="md"></div>
+          <div id="md-editor" style="display:none">
+            <div class="field"><textarea id="md-text" style="min-height:320px;font-family:Consolas,monospace;font-size:13px"></textarea></div>
+            <div style="display:flex;gap:10px">
+              <button class="btn primary small" id="md-save">保存档案</button>
+              <button class="btn plain small" id="md-cancel">取消</button>
+            </div>
+            <p class="hint">支持 Markdown 语法；技术决策与约定记在这里。</p>
+          </div>
         </div>
         <div class="section">
           <h2>档案信息</h2>
@@ -122,6 +130,9 @@ async function loadProject() {
 
   const md = await getJSON("/api/projects/" + encodeURIComponent(pid) + "/markdown");
   document.getElementById("md").innerHTML = renderMarkdown(md.markdown) || '<p class="hint">（无 PROJECT.md）</p>';
+  document.getElementById("md-text").value = md.markdown || "";
+  document.getElementById("md-editor").style.display = "none";
+  document.getElementById("md").style.display = "block";
 
   const isArchived = project.status === "归档";
   const btnArchive = document.getElementById("u-archive");
@@ -218,6 +229,22 @@ async function init() {
   document.getElementById("u-save").onclick = saveUpdate;
   document.getElementById("u-archive").onclick = toggleArchive;
   document.getElementById("t-add").onclick = addTodo;
+  document.getElementById("md-edit").onclick = () => {
+    document.getElementById("md-editor").style.display = "block";
+    document.getElementById("md").style.display = "none";
+  };
+  document.getElementById("md-cancel").onclick = () => {
+    document.getElementById("md-editor").style.display = "none";
+    document.getElementById("md").style.display = "block";
+  };
+  document.getElementById("md-save").onclick = async () => {
+    try {
+      await postJSON("/api/projects/" + encodeURIComponent(pid) + "/markdown",
+                     { content: document.getElementById("md-text").value });
+      toast("PROJECT.md 已保存");
+      loadProject();
+    } catch (err) { toast(err.message, true); }
+  };
   await loadProject();
 }
 

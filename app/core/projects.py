@@ -234,6 +234,23 @@ def list_archived(data_root: Path, q: str | None = None) -> list[dict]:
     return list_projects(data_root, include_archived=True, status="归档", q=q)
 
 
+def list_backups(data_root: Path, limit: int = 10) -> list[dict]:
+    """列出历史备份（新的在前），供备份状态页展示。"""
+    backups_dir = Path(data_root) / BACKUPS_DIR
+    if not backups_dir.exists():
+        return []
+    items = []
+    for path in sorted(backups_dir.glob("*.zip"), key=lambda p: p.stat().st_mtime, reverse=True)[:limit]:
+        stat = path.stat()
+        items.append({
+            "name": path.name,
+            "rel_path": path.relative_to(data_root).as_posix(),
+            "size_kb": round(stat.st_size / 1024, 1),
+            "modified_at": datetime.fromtimestamp(stat.st_mtime).astimezone().isoformat(timespec="seconds"),
+        })
+    return items
+
+
 def validate_all(data_root: Path) -> dict:
     """全库校验：所有 project.json、manifest、目录一致性。返回汇总报告。"""
     data_root = Path(data_root)
