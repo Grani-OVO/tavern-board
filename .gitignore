@@ -12,3 +12,6 @@ __pycache__/
 *.pyc
 .DS_Store
 Thumbs.db
+
+# 内部状态卡，不随仓库分发（本地保留）
+PROJECT.md

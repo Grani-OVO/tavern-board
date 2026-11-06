@@ -2,9 +2,7 @@
 
 简单、易用、可拓展、Agent 可读写的本地个人项目管理看板。日式奇幻酒馆公告栏风格。
 
-- 需求与验收标准：`D:\WorkBuddy\工单\2026-11-06-个人项目管理系统-MVP.md`（定稿冻结）
 - Agent 读写说明：[AGENT.md](AGENT.md)
-- 项目状态：`PROJECT.md`
 
 ## 运行
 
@@ -67,5 +65,9 @@ app/            Python 标准库实现的本地服务与核心模块
   static/       看板、详情、备份设置三页前端（原生 HTML/CSS/JS）
 tests/          unittest 测试
 AGENT.md        Agent 直接读写数据源的操作规范
-PROJECT.md      项目状态卡
 ```
+
+## 许可
+
+- 代码：[MIT](LICENSE)
+- 内置字体：[霞鹜文楷](https://github.com/lxgw/LxgwWenKai)，采用 [SIL OFL 1.1](app/static/fonts/OFL.txt) 授权，随项目一并分发
