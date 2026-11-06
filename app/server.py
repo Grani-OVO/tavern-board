@@ -293,7 +293,11 @@ class Handler(BaseHTTPRequestHandler):
 
 def run(host: str = "127.0.0.1", port: int = DEFAULT_PORT) -> None:
     server = ThreadingHTTPServer((host, port), Handler)
-    print(f"个人项目管理系统已启动: http://{host}:{port}/  （Ctrl+C 停止）")
+    url = f"http://{host}:{port}/"
+    print(f"个人项目管理系统已启动: {url}  （关闭本窗口或 Ctrl+C 停止）")
+    import threading
+    import webbrowser
+    threading.Timer(1.2, webbrowser.open, args=(url,)).start()
     try:
         server.serve_forever()
     except KeyboardInterrupt:
