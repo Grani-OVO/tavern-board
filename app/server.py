@@ -91,6 +91,8 @@ class Handler(BaseHTTPRequestHandler):
             mime = "font/woff"
         elif target.suffix in (".woff2",):
             mime = "font/woff2"
+        elif target.suffix in (".ico",):
+            mime = "image/x-icon"
         body = target.read_bytes()
         self.send_response(200)
         self.send_header("Content-Type", mime)
@@ -133,6 +135,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._serve_static(path.lstrip("/"))
         if path.startswith("/css/") or path.startswith("/js/") or path.startswith("/fonts/"):
             return self._serve_static(path.lstrip("/"))
+        if path == "/favicon.ico":
+            return self._serve_static("favicon.ico")
 
         # API
         if path == "/api/health":
